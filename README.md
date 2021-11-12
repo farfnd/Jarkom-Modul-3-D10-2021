@@ -1,5 +1,4 @@
-# Jarkom-Modul-3-D10-2021
-
+# Laporan Resmi Soal Shift Modul 3 Jarkom 2021
 
 ## Anggota Kelompok D10
 - Mohammad Faderik I H (05111940000023)
