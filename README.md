@@ -112,7 +112,7 @@ host Skypie {
     ![image](https://user-images.githubusercontent.com/70105993/141480776-89c00d94-84db-49ef-9304-1467a0ef65dc.png)
 
 
-2. Setelah proxy terpasang, coba akses http://its.ac.id dengan perintah `lynx http://its.ac.id`
+2. Setelah proxy terpasang, coba akses http://its.ac.id dengan perintah `lynx http://its.ac.id`.
 
     ![image](https://user-images.githubusercontent.com/70105993/141479916-2172f938-a78e-47b3-87b2-578d1bceaf08.png)
 
@@ -120,11 +120,104 @@ host Skypie {
 > Agar transaksi jual beli lebih aman dan pengguna website ada dua orang, proxy dipasang autentikasi user proxy dengan enkripsi MD5 dengan dua username, yaitu luffybelikapalyyy dengan password luffy_yyy dan zorobelikapalyyy dengan password zoro_yyy
 
 ### Jawaban:
+**Water7**
+1. Buat file **/etc/squid/passwd** untuk menyimpan username dan password yang akan digunakan dengan perintah `touch /etc/squid/passwd`.
+2. Jalankan perintah berikut untuk menginstall package yang dibutuhkan.
+    ```bash
+    apt-get update
+    apt-get install apache2-utils -y
+    ```
+    
+3. Tambahkan informasi username dan password pada file **/etc/squid/passwd** sesuai format yang diminta pada soal dengan perintah berikut.
+    ```bash
+    htpasswd -m /etc/squid/passwd luffybelikapald10
+    luffy_d10
+    luffy_d10
+
+    htpasswd -m /etc/squid/passwd zorobelikapald10
+    zoro_d10
+    zoro_d10
+    ```
+
+4. Ubah isi file `/etc/squid/squid.conf` seperti berikut untuk mengaktifkan user login menggunakan file **passwd** yang sudah dibuat sebelumnya.
+
+    ```
+    http_port 5000
+    visible_hostname jualbelikapal.d10.com
+    
+    auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwd
+    auth_param basic children 5
+    auth_param basic realm Proxy
+    auth_param basic credentialsttl 2 hours
+    auth_param basic casesensitive on
+    acl USERS proxy_auth REQUIRED
+    http_access allow USERS
+    ```
+    
+5. Restart squid dengan perintah `service squid restart`.
+
+**Loguetown**
+
+Coba akses kembali http://its.ac.id dengan perintah `lynx http://its.ac.id`, maka akan muncul perintah untuk memasukkan username dan password proxy.
+
+![image](https://user-images.githubusercontent.com/70105993/141483788-9e32311d-adab-4ef8-824b-523fdd4985fc.png)
 
 ## Soal 10
 > Transaksi jual beli tidak dilakukan setiap hari, oleh karena itu akses internet dibatasi hanya dapat diakses setiap hari Senin-Kamis pukul 07.00-11.00 dan setiap hari Selasa-Jum’at pukul 17.00-03.00 keesokan harinya (sampai Sabtu pukul 03.00)
 
 ### Jawaban:
+**Water7**
+1. Buat file **/etc/squid/acl.conf** untuk menyimpan konfigurasi ACL berdasarkan waktu akses yang akan digunakan dengan perintah `touch /etc/squid/acl.conf`.
+2. Tambahkan informasi waktu akses pada file **/etc/squid/acl.conf** sesuai yang diminta pada soal seperti berikut.
+    ```bash
+    acl AVAILABLE1 time MTWHF 07:00-11:00
+    acl AVAILABLE2 time TWHF 17:00-24:00
+    acl AVAILABLE3 time WHFA 00:00-03:00
+    ```
+
+    ![Screenshot_46](https://user-images.githubusercontent.com/70105993/141484431-17a16e2d-3801-4d1e-9a20-127d67b1848b.png)
+
+
+3. Ubah isi file `/etc/squid/squid.conf` seperti berikut untuk memperbolehkan akses secara terautentikasi dengan waktu akses sesuai yang sudah didefinisikan pada file **acl.conf**, dan menolak akses di luar itu.
+
+    ```
+    include /etc/squid/acl.conf
+
+    http_port 5000
+    visible_hostname jualbelikapal.d10.com
+
+    auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwd
+    auth_param basic children 5
+    auth_param basic realm Proxy
+    auth_param basic credentialsttl 2 hours
+    auth_param basic casesensitive on
+    acl USERS proxy_auth REQUIRED
+
+    http_access allow AVAILABLE1 USERS
+    http_access allow AVAILABLE2 USERS
+    http_access allow AVAILABLE3 USERS
+
+    http_access deny all
+    ```
+    
+    ![Screenshot_47](https://user-images.githubusercontent.com/70105993/141484608-6caf5afa-8b62-42e8-816f-de059570d695.png)
+    
+4. Restart squid dengan perintah `service squid restart`.
+
+**Loguetown**
+
+1. Pengujian pembatasan waktu akses bisa dilakukan dengan mengganti tanggal sistem dengan perintah:
+    - `date -s "12 NOV 2021 20:00:00"` (di dalam waktu akses yang diperbolehkan)
+    - `date -s "12 NOV 2021 14:00:00"` (di luar waktu akses yang diperbolehkan)
+  
+    kemudian akses kembali http://its.ac.id dengan perintah `lynx http://its.ac.id`.
+    - Jika akses dilakukan di dalam waktu yang diperbolehkan, maka akan muncul layar login, dan jika berhasil terautentikasi maka website akan ditampilkan.
+        
+        ![image](https://user-images.githubusercontent.com/70105993/141479916-2172f938-a78e-47b3-87b2-578d1bceaf08.png)
+    
+    - Jika akses dilakukan di luar waktu yang diperbolehkan, akan muncul alert 403 Forbidden, dan pesan error seperti berikut.
+        
+        ![image](https://user-images.githubusercontent.com/70105993/141485902-740111d8-8c83-4b7f-8c4e-04963f120dec.png)
 
 ## Soal 11
 > Agar transaksi bisa lebih fokus berjalan, maka dilakukan redirect website agar mudah mengingat website transaksi jual beli kapal. Setiap mengakses google.com, akan diredirect menuju super.franky.yyy.com dengan website yang sama pada soal shift modul 2. Web server super.franky.yyy.com berada pada node Skypie
