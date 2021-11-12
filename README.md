@@ -48,12 +48,73 @@ Prefix IP untuk kelompok kami adalah `10.26`.
 > Luffy dan Zoro berencana menjadikan Skypie sebagai server untuk jual beli kapal yang dimilikinya dengan alamat IP yang tetap dengan IP [prefix IP].3.69
 
 ### Jawaban:
+**Skypie**
+
+Dapatkan hwaddress milik Skypie dengan perintah `ip a`, lalu lihat pada bagian `link/ether` sesuai dengan interface yang terhubung dengan router (dalam hal ini **eth0**). Yang didapatkan adalah `f6:11:75:ac:47:fc`.
+
+![image](https://user-images.githubusercontent.com/70105993/141478652-e3c0e032-d809-47d9-9a5c-a976482ea1b2.png)
+
+**Jipangu**
+
+Tambahkan pengaturan seperti berikut pada file `/etc/dhcp/dhcpd.conf`
+
+```vim
+host Skypie {
+        hardware ethernet f6:11:75:ac:47:fc;
+        fixed-address 10.26.3.69;
+}
+```
+
+![Screenshot_43](https://user-images.githubusercontent.com/70105993/141481022-52dbc2ef-d1ef-48a9-bfab-6c60e0ee8a9c.png)
+
+**Skypie**
+
+1. Edit network configuration pada node Skypie seperti berikut.
+    ```
+    auto eth0
+    iface eth0 inet dhcp
+    hwaddress ether f6:11:75:ac:47:fc
+    ```
+
+    ![image](https://user-images.githubusercontent.com/70105993/141478822-7e69e74e-511f-4d2a-97bc-55149dfa4dd9.png)
+
+2. Cek dengan perintah `ip a` apakah IP sudah sesuai ketentuan yaitu `[prefix IP].3.69`.
+
+    ![image](https://user-images.githubusercontent.com/70105993/141479085-53a87530-fdca-40d9-b7f2-0aed13ba72b1.png)
 
 ## Soal 8
 > Loguetown digunakan sebagai client Proxy agar transaksi jual beli dapat terjamin keamanannya, juga untuk mencegah kebocoran data transaksi.
 > Pada Loguetown, proxy harus bisa diakses dengan nama jualbelikapal.yyy.com dengan port yang digunakan adalah 5000
 
 ### Jawaban:
+**Water7**
+
+1. Tambahkan konfigurasi berikut pada file `/etc/squid/squid.conf` untuk mengatur nama dan port proxy serta memperbolehkan akses http untuk semua kondisi.
+    ```
+    http_port 5000
+    visible_hostname jualbelikapal.d10.com
+
+    http_access allow all
+    ```
+    
+   ![Screenshot_45](https://user-images.githubusercontent.com/70105993/141481206-6a111c66-0ffc-4089-bab8-7721ef6d5b76.png)
+
+2. Restart squid dengan perintah `service squid restart`.
+
+**Loguetown**
+
+1. Aktifkan proxy dan cek konfigurasi proxy dengan perintah berikut.
+    ```bash
+    export http_proxy=http://10.26.2.3:5000
+    env | grep -i proxy
+    ```
+
+    ![image](https://user-images.githubusercontent.com/70105993/141480776-89c00d94-84db-49ef-9304-1467a0ef65dc.png)
+
+
+2. Setelah proxy terpasang, coba akses http://its.ac.id dengan perintah `lynx http://its.ac.id`
+
+    ![image](https://user-images.githubusercontent.com/70105993/141479916-2172f938-a78e-47b3-87b2-578d1bceaf08.png)
 
 ## Soal 9
 > Agar transaksi jual beli lebih aman dan pengguna website ada dua orang, proxy dipasang autentikasi user proxy dengan enkripsi MD5 dengan dua username, yaitu luffybelikapalyyy dengan password luffy_yyy dan zorobelikapalyyy dengan password zoro_yyy
