@@ -238,5 +238,5 @@ kemudian akses kembali http://its.ac.id dengan perintah `lynx http://its.ac.id`.
 ## Kendala selama pengerjaan
 - Start node dalam project membutuhkan urutan tertentu, dan kadang terkendala jaringan saat instalasi package
 - Client sempat tidak bisa mendapatkan IP dari DHCP server
-- super.franky.d10.com sempat memberikan error 'Destination Not Found' ketika di-ping ataupun diakses melalui lynx
+- super.franky.d10.com sempat memberikan error 'Destination Host Unreachable' ketika di-ping ataupun diakses melalui lynx
 - Restart squid sempat berkali-kali mengalami kegagalan karena proses dihentikan oleh sistem secara otomatis
