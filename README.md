@@ -206,18 +206,19 @@ Coba akses kembali http://its.ac.id dengan perintah `lynx http://its.ac.id`, mak
 
 **Loguetown**
 
-1. Pengujian pembatasan waktu akses bisa dilakukan dengan mengganti tanggal sistem dengan perintah:
-    - `date -s "12 NOV 2021 20:00:00"` (di dalam waktu akses yang diperbolehkan)
-    - `date -s "12 NOV 2021 14:00:00"` (di luar waktu akses yang diperbolehkan)
-  
-    kemudian akses kembali http://its.ac.id dengan perintah `lynx http://its.ac.id`.
-    - Jika akses dilakukan di dalam waktu yang diperbolehkan, maka akan muncul layar login, dan jika berhasil terautentikasi maka website akan ditampilkan.
-        
-        ![image](https://user-images.githubusercontent.com/70105993/141479916-2172f938-a78e-47b3-87b2-578d1bceaf08.png)
-    
-    - Jika akses dilakukan di luar waktu yang diperbolehkan, akan muncul alert 403 Forbidden, dan pesan error seperti berikut.
-        
-        ![image](https://user-images.githubusercontent.com/70105993/141485902-740111d8-8c83-4b7f-8c4e-04963f120dec.png)
+Pengujian pembatasan waktu akses bisa dilakukan dengan mengganti tanggal sistem dengan perintah:
+- `date -s "12 NOV 2021 20:00:00"` (di dalam waktu akses yang diperbolehkan)
+- `date -s "12 NOV 2021 14:00:00"` (di luar waktu akses yang diperbolehkan)
+
+kemudian akses kembali http://its.ac.id dengan perintah `lynx http://its.ac.id`.
+
+- Jika akses dilakukan di dalam waktu yang diperbolehkan, maka akan muncul layar login, dan jika berhasil terautentikasi maka website akan ditampilkan.
+
+    ![image](https://user-images.githubusercontent.com/70105993/141479916-2172f938-a78e-47b3-87b2-578d1bceaf08.png)
+
+- Jika akses dilakukan di luar waktu yang diperbolehkan, akan muncul alert 403 Forbidden, dan pesan error seperti berikut.
+
+    ![image](https://user-images.githubusercontent.com/70105993/141485902-740111d8-8c83-4b7f-8c4e-04963f120dec.png)
 
 ## Soal 11
 > Agar transaksi bisa lebih fokus berjalan, maka dilakukan redirect website agar mudah mengingat website transaksi jual beli kapal. Setiap mengakses google.com, akan diredirect menuju super.franky.yyy.com dengan website yang sama pada soal shift modul 2. Web server super.franky.yyy.com berada pada node Skypie
