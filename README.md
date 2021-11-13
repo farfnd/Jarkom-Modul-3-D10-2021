@@ -9,41 +9,228 @@
 ## Prefix IP
 Prefix IP untuk kelompok kami adalah `10.26`.
 
-## Soal 1
+## Soal 1 dan 2
 > ![image](https://user-images.githubusercontent.com/70105993/141472155-85410a83-129d-4309-8d61-8655331c9899.png)
 > 
-> Luffy bersama Zoro berencana membuat peta tersebut dengan kriteria EniesLobby sebagai DNS Server, Jipangu sebagai DHCP Server, Water7 sebagai Proxy Server
+> Luffy bersama Zoro berencana membuat peta tersebut dengan kriteria EniesLobby sebagai DNS Server, Jipangu sebagai DHCP Server, Water7 sebagai Proxy Server dan Foosha sebagai DHCP Relay
 
 ### Jawaban:
+1. Membuat topologi seperti gambar diatas
+2. Mengatur `Network Configuration` pada setiap node yang akan digunakan
+    * Foosha
+        ```
+        auto eth0
+        iface eth0 inet dhcp
 
-## Soal 2
-> dan Foosha sebagai DHCP Relay
+        auto eth1
+        iface eth1 inet static
+            address 10.26.1.1
+            netmask 255.255.255.0
 
-### Jawaban:
+        auto eth2
+        iface eth2 inet static
+            address 10.26.2.1
+            netmask 255.255.255.0
 
-## Soal 3
+        auto eth3
+        iface eth3 inet static
+            address 10.26.3.1
+            netmask 255.255.255.0
+        ```
+    * EniesLobby
+        ```
+        auto eth0
+        iface eth0 inet static
+            address 10.26.2.2
+            netmask 255.255.255.0
+            gateway 10.26.2.1
+        ```
+    * Water7
+        ```
+        auto eth0
+        iface eth0 inet static
+            address 10.26.2.3
+            netmask 255.255.255.0
+            gateway 10.26.2.1
+        ```
+    * Jipangu
+        ```
+        auto eth0
+        iface eth0 inet static
+            address 10.26.2.4
+            netmask 255.255.255.0
+            gateway 10.26.2.1
+        ```
+3. Jalankan perintah di bawah ini pada node `Foosha`
+    ```
+    iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE -s 10.26.0.0/16
+    ```
+4. Jalankan perintah ini pada node yang `Network Configuration` sudah di setting tadi, kecuali `Foosha`
+    ```
+    echo nameserver 192.168.122.1 > /etc/resolv.conf
+    ```
+5. Menjadikan `Jipanggu` sebagai `DHCP Server`
+    1. Lakukan update pada dengan perintah :
+        ```
+        apt-get update
+        ```
+    2. Install isc-dhcp-server dengan perintah :
+        ```
+        apt-get install isc-dhcp-server -y
+        ```
+    3. Periksa apakah sudah terinstall atau belum dengan menggunakan perintah :
+        ```
+        dhcpd --version
+        ```
+        ![alt-text](https://media.discordapp.net/attachments/848199470025801749/908930638940340224/unknown.png)
+    4. Edit file `/etc/default/isc-dhcp-server` dengan perintah :
+        ```
+        nano /etc/default/isc-dhcp-server
+        ```
+    5. Karena interface yang akan diberikan layanan adalah **eth0**, tambahkan line berikut sehingga menjadi seperti gambar
+        ```
+        INTERFACES = "eth0"
+        ```
+        ![alt-text](https://media.discordapp.net/attachments/848199470025801749/908933315065700422/unknown.png)
+6. Menjadikan `Water7` sebagai `Proxy Server`
+    1. Lakukan update pada dengan perintah :
+        ```
+        apt-get update
+        ```
+    2. Instal squid dengan perintah :
+        ```
+        apt-get install squid -y
+        ```
+    3. Backup file configurasi yang sudah disediakan squid dengan perintah :
+        ```
+        mv /etc/squid/squid.conf /etc/squid/squid.conf.bak
+        ```
+    4. Buat file configurasi baru dengan peritah :
+        ```
+        nano /etc/squid/squid.conf
+        ```
+    5. Tambahkan line berikut
+        ```
+        http_port 8080
+        visible_hostname Water7
+        ```
+    6. Restart service squid dengan perintah :
+        ```
+        service squid restart
+        ```
+7. Menjadikan `EniesLobby` sebagai `DNS Server`
+    1. Lakukan update pada dengan perintah :
+        ```
+        apt-get update
+        ```
+    2. Install bind9 dengan perintah :
+        ```
+        apt-get install bind9 -y
+        ```
+    3. Edit file `/etc/bind/named.conf.options` dengan perintah :
+        ```
+        nano /etc/bind/named.conf.options
+        ```
+    4. Lakukan uncomment pada baris berikut
+        ```
+        forwarders {
+            192.168.122.1;
+        };
+        ```
+    5. Lakukan comment pada baris berikut
+        ```
+        //dnssec-validation auto;
+        ```
+    6. Tambahkan
+        ```
+        allow-query{any;};
+        ```
+8. Menjadikan `Foosha` sebagai `DHCP Relay`
+    1. Lakukan update pada dengan perintah :
+        ```
+        apt-get update
+        ```
+    2. Install isc-dhcp-relay dengan perintah :
+        ```
+        apt-get install isc-dhcp-relay
+        ```
+    3. Saat melakukan instalasi, akan diminta input SERVERS yang diisi dengan `IP Jipanggu`
+        ```
+        10.26.2.4
+        ```
+    4. Kemudian, akan diminta input untuk INTERFACES, masukan seperti di bawah
+        ```
+        eth1 eth2 eth3
+        ```
+    5. Settingan di atas juga bisa kita ubah pada file `/etc/default/isc-dhcp-relay` dengan perintah
+        ```
+        nano /etc/default/isc-dhcp-relay
+        ```
+    6. Restart service isc-dhcp-relay
+        ```
+        service isc-dhcp-relay restart
+        ```
+## Soal 3 - 6
 > Ada beberapa kriteria yang ingin dibuat oleh Luffy dan Zoro, yaitu:
 > 1. Semua client yang ada HARUS menggunakan konfigurasi IP dari DHCP Server.
 > 2. Client yang melalui Switch1 mendapatkan range IP dari [prefix IP].1.20 - [prefix IP].1.99 dan [prefix IP].1.150 - [prefix IP].1.169
-
-
-### Jawaban:
-
-## Soal 4
 > 3. Client yang melalui Switch3 mendapatkan range IP dari [prefix IP].3.30 - [prefix IP].3.50
-
-### Jawaban:
-
-## Soal 5
 > 4. Client mendapatkan DNS dari EniesLobby dan client dapat terhubung dengan internet melalui DNS tersebut.
-
-### Jawaban:
-
-## Soal 6
 > 5. Lama waktu DHCP server meminjamkan alamat IP kepada Client yang melalui Switch1 selama 6 menit sedangkan pada client yang melalui Switch3 selama 12 menit. Dengan waktu maksimal yang dialokasikan untuk peminjaman alamat IP selama 120 menit.
 
-### Jawaban:
 
+### Jawaban:
+1. Edit file `/etc/dhcp/dhcpd.conf` pada Jipanggu dengan perintah :
+    ```
+    nano /etc/dhcp/dhcpd.conf
+    ```
+2. Tambahkan script berikut
+    ```
+    subnet 10.26.2.0 netmask 255.255.255.0 {
+        option routers 10.26.2.1;
+    }
+
+    subnet 10.26.1.0 netmask 255.255.255.0 {
+        range  10.26.1.20 10.26.1.99;           //Untuk No 3 (switch 1)
+        range  10.26.1.150 10.26.1.169;         //Untuk No 3 (switch 1)
+        option routers 10.26.1.1;
+        option broadcast-address 10.26.1.255;
+        option domain-name-servers 10.26.2.2;
+        default-lease-time 360;                 //Untuk No 6 (switch 1)
+        max-lease-time 7200;                    //Untuk No 6 (switch 1)
+    }
+
+    subnet 10.26.3.0 netmask 255.255.255.0 {
+        range 10.26.3.30 10.26.3.50;            //Untuk No 4 
+        option routers 10.26.3.1;
+        option broadcast-address 10.26.3.255;
+        option domain-name-servers 10.26.2.2;
+        default-lease-time 720;                 //Untuk No 6 (switch 2)
+        max-lease-time 7200;                    //Untuk No 6 (switch 2)
+    }
+    ```
+3. Restart service DHCP Server dengan perintah :
+    ```
+    service isc-dhcp-server restart
+    ```
+4. Edit `Network Configuration` untuk setiap node cient (Untuk no 5) menjadi
+    ```
+    auto eth0
+    iface eth0 inet dhcp
+    ```
+5. Kemudian restart setiap node client yang disetting tadi
+6. Periksa IP setiap node dengan perintah
+    ```
+    ifconfig eth0
+    ```
+    * Longuetown
+    ![alt-text](https://media.discordapp.net/attachments/848199470025801749/908944853386293278/unknown.png)
+    * Alabasta
+    ![alt-text](https://media.discordapp.net/attachments/848199470025801749/908944990913327104/unknown.png)
+    * TottoLand
+    ![alt-text](https://media.discordapp.net/attachments/848199470025801749/908945369591849010/unknown.png)
+    * Skypie
+    ![alt-text](https://media.discordapp.net/attachments/848199470025801749/908945489582522399/unknown.png)
 ## Soal 7
 > Luffy dan Zoro berencana menjadikan Skypie sebagai server untuk jual beli kapal yang dimilikinya dengan alamat IP yang tetap dengan IP [prefix IP].3.69
 
