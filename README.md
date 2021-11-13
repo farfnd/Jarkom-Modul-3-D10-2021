@@ -411,16 +411,215 @@ kemudian akses kembali http://its.ac.id dengan perintah `lynx http://its.ac.id`.
 > Agar transaksi bisa lebih fokus berjalan, maka dilakukan redirect website agar mudah mengingat website transaksi jual beli kapal. Setiap mengakses google.com, akan diredirect menuju super.franky.yyy.com dengan website yang sama pada soal shift modul 2. Web server super.franky.yyy.com berada pada node Skypie
 
 ### Jawaban:
+**EniesLobby**
+1. Tambahkan konfigurasi DNS untuk `super.franky.d10.com` pada file `/etc/bind/named.conf.local` seperti berikut.
+    ```vim
+    zone "super.franky.d10.com" {
+        type master;
+        file "/etc/bind/kaizoku/super.franky.d10.com";
+        allow-transfer { 10.26.3.69; };
+    };
+    ```
+2. Buat folder **/etc/bind/kaizoku** dengan perintah `mkdir /etc/bind/kaizoku`.
+3. Salin file **db.local** sebagai template file konfigurasi ke folder kaizoku dengan perintah `cp /etc/bind/db.local /etc/bind/kaizoku/super.franky.d10.com`.
+4. Ubah isi file `/etc/bind/kaizoku/super.franky.d10.com` menjadi seperti berikut.
+    ```vim
+    ;
+    ; BIND data file for local loopback interface
+    ;
+    $TTL    604800
+    @       IN      SOA     super.franky.d10.com. root.super.franky.d10.com. (
+                         2021100401         ; Serial
+                             604800         ; Refresh
+                              86400         ; Retry
+                            2419200         ; Expire
+                             604800 )       ; Negative Cache TTL
+    ;
+    @       IN      NS      super.franky.d10.com.
+    @       IN      A       10.26.3.69
+    www     IN      CNAME   super.franky.d10.com.
+    ```
+    
+5. Restart bind9 dengan perintah `service bind9 restart`.
+
+**Skypie**
+1. Tambahkan baris berikut di akhir file `/etc/apache2/apache2.conf`.
+    ```vim
+    ServerName 10.26.3.69
+    ```
+    
+2. Buat folder **/var/www/super.franky.d10.com** dengan perintah `mkdir /var/www/super.franky.d10.com`.
+3. Install **wget** dan **unzip** dengan perintah:
+    ```bash
+    apt-get install wget -y
+    apt-get install unzip -y
+    ```
+    
+4. Download dan unzip file zip yang diperlukan untuk web dengan perintah:
+    ```bash
+    wget https://raw.githubusercontent.com/FeinardSlim/Praktikum-Modul-2-Jarkom/main/super.franky.zip
+    unzip -j super.franky.zip -d /var/www/super.franky.d10.com
+    ```
+
+5. Buat file baru pada direktori **/etc/apache2/sites-available** dengan nama **super.franky.d10.com.conf** dan isi sebagai berikut
+    ```vim
+    root@Skypie:~# cat /root/no11/super.franky.d10.com.conf
+    <VirtualHost *:80 *:5000>
+            ServerName super.franky.d10.com
+            ServerAlias www.super.franky.d10.com
+
+            ServerAdmin webmaster@localhost
+            DocumentRoot /var/www/super.franky.d10.com
+
+            <Directory /var/www/super.franky.d10.com>
+                    Options +Indexes
+            </Directory>
+
+            <Directory /var/www/super.franky.d10.com/public>
+                    Options +Indexes
+            </Directory>
+
+            Alias "/js" "/var/www/super.franky.d10.com/public/js"
+
+            ErrorLog ${APACHE_LOG_DIR}/error.log
+            CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+            ErrorDocument 404 /error/404.html
+    </VirtualHost>
+    ```
+    
+6. Jalankan konfigurasi webserver yang telah dibuat dengan perintah `a2ensite super.franky.d10.com`.
+7. Restart service Apache dengan perintah `service apache2 restart`.
+
+**Water7**
+1. Pada file **/etc/resolv.conf**, tambahkan nameserver baru yang mengarah ke IP EniesLobby dan comment nameserver lama seperti berikut.
+
+    ```vim
+    # nameserver 192.168.122.1
+    nameserver 10.26.2.2
+    ```
+
+2. Ubah isi file `/etc/squid/squid.conf` seperti berikut untuk mengaktifkan redirection.
+
+    ```
+    include /etc/squid/acl.conf
+
+    http_port 5000
+    visible_hostname jualbelikapal.d10.com
+
+    auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwd
+    auth_param basic children 5
+    auth_param basic realm Proxy
+    auth_param basic credentialsttl 2 hours
+    auth_param basic casesensitive on
+    acl USERS proxy_auth REQUIRED
+
+    http_access allow AVAILABLE1 USERS
+    http_access allow AVAILABLE2 USERS
+    http_access allow AVAILABLE3 USERS
+
+    acl BLACKLIST dstdomain google.com
+    deny_info http://super.franky.d10.com/ BLACKLIST
+    http_reply_access deny BLACKLIST
+    ```
+
+3. Restart squid dengan perintah `service squid restart`.
+
+**Loguetown**
+
+Coba akses google.com dengan perintah `lynx google.com` pada waktu akses yang diperbolehkan, maka akan muncul perintah untuk memasukkan username dan password proxy. Jika berhasil terautentikasi maka akan diarahkan menuju super.franky.d10.com.
+
+![recording](https://user-images.githubusercontent.com/70105993/141492389-2b602eaa-1075-463c-9113-6415537adc21.gif)
 
 ## Soal 12
 > Saatnya berlayar! Luffy dan Zoro akhirnya memutuskan untuk berlayar untuk mencari harta karun di super.franky.yyy.com. Tugas pencarian dibagi menjadi dua misi, Luffy bertugas untuk mendapatkan gambar (.png, .jpg), sedangkan Zoro mendapatkan sisanya. Karena Luffy orangnya sangat teliti untuk mencari harta karun, ketika ia berhasil mendapatkan gambar, ia mendapatkan gambar dan melihatnya dengan kecepatan 10 kbps
 
 ### Jawaban:
+**Water7**
+1. Buat file **/etc/squid/acl-bandwidth.conf** untuk menyimpan konfigurasi bandwidth dengan perintah `touch /etc/squid/acl-bandwidth.conf`.
+2. Tambahkan informasi pembatasan bandwidth pada file **/etc/squid/acl-bandwidth.conf** untuk membatasi bandwidth sebesar 1250 Bps (10 kbps) pada url dengan path yang mengandung '.jpg' atau '.png' dan diakses dengan akun luffy seperti berikut.
+
+    ```
+    acl images_ext urlpath_regex -i \.jpg$ \.png$
+
+    auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwd
+    acl luffy proxy_auth luffybelikapald10
+
+    delay_pools 2
+    delay_class 1 1
+    delay_parameters 1 1250/1250
+    delay_access 1 allow luffy images_ext
+    delay_access 1 deny all
+    ```
+
+3. Tambahkan ACL dari file **acl-bandwidth.conf** pada file `/etc/squid/squid.conf` seperti berikut.
+
+    ```
+    include /etc/squid/acl.conf
+    include /etc/squid/acl-bandwidth.conf
+
+    http_port 5000
+    visible_hostname jualbelikapal.d10.com
+
+    auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwd
+    auth_param basic children 5
+    auth_param basic realm Proxy
+    auth_param basic credentialsttl 2 hours
+    auth_param basic casesensitive on
+    acl USERS proxy_auth REQUIRED
+
+    http_access allow AVAILABLE1 USERS
+    http_access allow AVAILABLE2 USERS
+    http_access allow AVAILABLE3 USERS
+
+    acl BLACKLIST dstdomain google.com
+    deny_info http://super.franky.d10.com/ BLACKLIST
+    http_reply_access deny BLACKLIST
+    ```
+    
+4. Restart squid dengan perintah `service squid restart`.
+
+**Loguetown**
+
+Coba akses super.franky.d10.com/public/images dengan perintah `lynx super.franky.d10.com/public/images` menggunakan akun luffy kemudian download salah satu file dengan ekstensi .jpg atau .png, maka akan didapatkan kecepatan download sekitar 1.3 kBps (1.25 kBps dibulatkan ke atas).
+
+![Screenshot_57](https://user-images.githubusercontent.com/70105993/141494457-edd61ba8-ad83-431f-af04-90fd5163ff9d.png)
 
 ## Soal 13
 > Sedangkan, Zoro yang sangat bersemangat untuk mencari harta karun, sehingga kecepatan kapal Zoro tidak dibatasi ketika sudah mendapatkan harta yang diinginkannya
 
 ### Jawaban:
+**Water7**
+1. Ubah file **/etc/squid/acl-bandwidth.conf** untuk menambahkan konfigurasi untuk tidak membatasi bandwidth situs ketika diakses dengan akun zoro menjadi seperti berikut.
+
+    ```
+    acl images_ext urlpath_regex -i \.jpg$ \.png$
+
+    auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwd
+    acl luffy proxy_auth luffybelikapald10
+    acl zoro proxy_auth zorobelikapald10
+
+    delay_pools 2
+    delay_class 1 1
+    delay_parameters 1 1250/1250
+    delay_access 1 allow luffy images_ext
+    delay_access 1 deny all
+
+    delay_class 2 1
+    delay_parameters 2 -1/-1
+    delay_access 2 allow zoro
+    delay_access 2 deny luffy
+    delay_access 2 deny all
+    ```
+    
+2. Restart squid dengan perintah `service squid restart`.
+
+**Loguetown**
+
+Coba akses super.franky.d10.com/public/images dengan perintah `lynx super.franky.d10.com/public/images` menggunakan akun zoro kemudian download salah satu file, maka akan didapatkan kecepatan download yang sangat cepat.
+
+![recording(2)](https://user-images.githubusercontent.com/70105993/141495875-6362f648-e28c-425f-b1dd-d21cc3db4b94.gif)
+
 
 ## Kendala selama pengerjaan
 - Start node dalam project membutuhkan urutan tertentu, dan kadang terkendala jaringan saat instalasi package
